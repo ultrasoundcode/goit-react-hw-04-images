@@ -1,37 +1,35 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import PropTypes from 'prop-types';
-import { Component } from 'react';
+import { useEffect } from 'react';
 import styles from './Modal.module.css';
 
-export class Modal extends Component {
-  handleCloseClick = event => {
+export function Modal({ image, onClose }) {
+  const handleCloseClick = event => {
     if (event.target.tagName !== 'IMG') {
-      this.props.onClose();
+      onClose();
     }
   };
 
-  handleKeyDown = event => {
+  const handleKeyDown = event => {
     if (event.key === 'Escape') {
-      this.props.onClose();
+      onClose();
     }
   };
 
-  componentDidMount() {
-    document.addEventListener('keydown', this.handleKeyDown);
-  }
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown]);
 
-  componentWillUnmount() {
-    document.removeEventListener('keydown', this.handleKeyDown);
-  }
-
-  render() {
-    return (
-      <div className={styles.Overlay} onClick={this.handleCloseClick}>
-        <div className={styles.Modal}>
-          <img src={this.props.image} alt="" />
-        </div>
+  return (
+    <div className={styles.Overlay} onClick={handleCloseClick}>
+      <div className={styles.Modal}>
+        <img src={image} alt="" />
       </div>
-    );
-  }
+    </div>
+  );
 }
 
 Modal.propTypes = {

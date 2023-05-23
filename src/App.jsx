@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { Searchbar } from './components/Searchbar/Searchbar';
 import { ImageGallery } from './components/ImageGallery/ImageGallery';
 import { Button } from './components/Button/Button';
@@ -7,81 +7,61 @@ import { Modal } from './components/Modal/Modal';
 import { Api } from 'API/Api';
 import { Empty } from './components/Empty/Empty';
 
-export class App extends Component {
-  state = {
-    images: [],
-    page: 1,
-    isLoading: false,
-    query: '',
-    total: 13,
-    current: null,
-  };
+export function App() {
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [query, setQuery] = useState('');
+  const [total, setTotal] = useState(0);
+  const [current, setCurrent] = useState(null);
 
-  componentDidUpdate(_, prevState) {
-    if (
-      prevState.page !== this.state.page ||
-      prevState.query !== this.state.query
-    ) {
-      this.fetchImages();
+  useEffect(() => {
+    if (!query) {
+      return;
     }
-  }
+    fetchImages();
+  }, [page, query]);
 
-  fetchImages = () => {
-    this.setState({
-      isLoading: true,
-    });
-    Api.fetchImages(this.state.query, this.state.page)
+  const fetchImages = () => {
+    setIsLoading(true);
+    Api.fetchImages(query, page)
       .then(res => {
-        this.setState({
-          images: [...this.state.images, ...res.data.hits],
-          total: res.data.total,
-        });
+        setImages([...images, ...res.data.hits]);
+        setTotal(res.data.total);
       })
       .finally(() => {
-        this.setState({
-          isLoading: false,
-        });
+        setIsLoading(false);
       });
   };
 
-  isDisabled() {
-    return this.state.page >= Math.ceil(this.state.total / 12);
+  function isDisabled() {
+    return page >= Math.ceil(total / 12);
   }
 
-  onSubmit = query => {
-    this.setState({ query, page: 1, images: [] });
+  const onSubmit = query => {
+    setQuery(query);
+    setPage(1);
+    setImages([]);
   };
 
-  render() {
-    const hasImages = this.state.images.length > 0;
-    const hasLoading = this.state.isLoading && !hasImages;
+  const hasImages = images.length > 0;
+  const hasLoading = isLoading && !hasImages;
+  const showBtn = !isDisabled();
+  return (
+    <div className="App">
+      <Searchbar onSubmit={onSubmit} />
+      {hasImages ? (
+        <ImageGallery
+          onClickImage={image => setCurrent(image)}
+          images={images}
+        />
+      ) : (
+        <Empty />
+      )}
+      {hasLoading && <Loader />}
+      {showBtn && <Button onClick={() => setPage(page + 1)} />}
 
-    return (
-      <div className="App">
-        <Searchbar onSubmit={this.onSubmit} />
-        {hasImages ? (
-          <ImageGallery
-            onClickImage={image => this.setState({ current: image })}
-            images={this.state.images}
-          />
-        ) : (
-          <Empty />
-        )}
-        {hasLoading && <Loader />}
-        {hasImages && (
-          <Button
-            disabled={this.isDisabled()}
-            onClick={() => this.setState({ page: this.state.page + 1 })}
-          />
-        )}
-
-        {this.state.current && (
-          <Modal
-            onClose={() => this.setState({ current: null })}
-            image={this.state.current}
-          />
-        )}
-      </div>
-    );
-  }
+      {current && <Modal onClose={() => setCurrent(null)} image={current} />}
+    </div>
+  );
 }
