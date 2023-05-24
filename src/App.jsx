@@ -20,20 +20,19 @@ export function App() {
     if (!query) {
       return;
     }
+    const fetchImages = () => {
+      setIsLoading(true);
+      Api.fetchImages(query, page)
+        .then(res => {
+          setImages([...images, ...res.data.hits]);
+          setTotal(res.data.total);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    };
     fetchImages();
   }, [page, query]);
-
-  const fetchImages = () => {
-    setIsLoading(true);
-    Api.fetchImages(query, page)
-      .then(res => {
-        setImages([...images, ...res.data.hits]);
-        setTotal(res.data.total);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  };
 
   function isDisabled() {
     return page >= Math.ceil(total / 12);
